@@ -1,0 +1,14 @@
+{
+  "name": "braydenmay-plugins",
+  "owner": {
+    "name": "Brayden May",
+    "email": "brayd3nmay@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "readme",
+      "source": "./plugins/readme",
+      "description": "Use when writing or generating a README from scratch for a software project."
+    }
+  ]
+}

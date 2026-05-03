@@ -1,0 +1,9 @@
+{
+  "name": "readme",
+  "description": "Use when writing or generating a README from scratch for a software project.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brayden May",
+    "email": "brayd3nmay@gmail.com"
+  }
+}
