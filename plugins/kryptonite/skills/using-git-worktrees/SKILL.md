@@ -266,9 +266,9 @@ Ready to implement auth feature
 - **kryptonite:coordinating-agent-teams** — uses this skill again to layer per-teammate worktrees alongside the integration worktree (which writing-plans already created)
 - Any skill needing an isolated workspace
 
-`kryptonite:executing-plans` and `kryptonite:coordinating-agent-teams` do NOT create the feature worktree themselves — they verify they're inside the one writing-plans created and stop if they're not.
+The executing-plans and coordinating-agent-teams skills do NOT create the feature worktree themselves — they verify they're inside the one writing-plans created and stop if they're not.
 
 **Cleanup when work is complete:**
-- `kryptonite:finishing-a-development-branch` owns final cleanup of the feature/integration worktree(s) and per-teammate worktrees
+- finishing-a-development-branch owns final cleanup of the feature/integration worktree(s) and per-teammate worktrees
 - For ad-hoc usage outside the kryptonite workflow: `git worktree remove <path>` to remove a worktree directory
 - Per the user's global CLAUDE.md, do NOT auto-merge or push — let the user review the diff and decide

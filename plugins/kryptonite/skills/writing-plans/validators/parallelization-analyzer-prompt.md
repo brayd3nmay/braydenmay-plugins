@@ -2,7 +2,7 @@
 
 **Slots to substitute before dispatch:** `[PLAN_FILE_PATH]`. See `./_dispatch.md` for substitution discipline.
 
-**Purpose:** Produce the `## Parallelization Map` content (Groups + Ownership table + Inter-group contracts) consumed by `kryptonite:coordinating-agent-teams`.
+**Purpose:** Produce the `## Parallelization Map` content (Groups + Ownership table + Inter-group contracts) consumed by coordinating-agent-teams.
 
 **Dispatch when:** Plan has 2+ components AND team execution is plausible.
 
@@ -14,13 +14,13 @@
 Agent (general-purpose):
   description: "Build parallelization map"
   prompt: |
-    You are the parallelization-analyzer. Your job: turn the plan's component list into a concrete parallelization map that `kryptonite:coordinating-agent-teams` can consume.
+    You are the parallelization-analyzer. Your job: turn the plan's component list into a concrete parallelization map that coordinating-agent-teams can consume.
 
     **Plan to review:** [PLAN_FILE_PATH]
 
     ## Required output (three subsections, in this exact order)
 
-    `kryptonite:coordinating-agent-teams` will REJECT a plan missing any subsection. Be complete.
+    coordinating-agent-teams will REJECT a plan missing any subsection. Be complete.
 
     ### 1. Groups
 

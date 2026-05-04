@@ -71,6 +71,13 @@ Agent (general-purpose):
     - **Do not flag** anything in the plan's Implementation notes that says
       "use this approach" — that decision is settled.
 
+    ## Output Discipline
+
+    Output ONLY the sections under "Output Format" below. No
+    deliberation prose, self-corrections, or "skip me" notes — decide
+    internally, emit decisions only. Candidates that don't survive
+    scrutiny are omitted entirely.
+
     ## Output Format
 
     ## Quality Findings

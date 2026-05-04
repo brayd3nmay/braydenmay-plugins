@@ -75,7 +75,7 @@ Agent(description: "Fix tool-approval-race tests",      prompt: "<focused brief>
 # All three run concurrently; each returns a summary.
 ```
 
-Use `run_in_background: true` only when you have genuinely independent work to do while they run (rare for one-shot fan-out — that's the `kryptonite:coordinating-agent-teams` shape).
+Use `run_in_background: true` only when you have genuinely independent work to do while they run (rare for one-shot fan-out — that's the coordinating-agent-teams shape).
 
 ### 4. Review and Integrate
 
@@ -185,7 +185,7 @@ From debugging session (2025-10-03):
 - All fixes integrated successfully
 - Zero conflicts between agent changes
 
-## When NOT to use (vs. `kryptonite:coordinating-agent-teams`)
+## When NOT to use (vs. coordinating-agent-teams)
 
 These two skills both spawn multiple agents but have very different shapes — pick the right one.
 
@@ -195,7 +195,7 @@ These two skills both spawn multiple agents but have very different shapes — p
 | Each agent does one task and returns a summary | Each teammate owns multiple tasks across one or more groups |
 | No inter-agent communication needed | Three communication channels (lead, peer, `contracts/`) |
 | No worktree setup required | Per-teammate worktrees + integration branch |
-| Triggered ad-hoc during debugging or research | Triggered by `kryptonite:writing-plans` after the parallelization-analyzer fills in the plan |
+| Triggered ad-hoc during debugging or research | Triggered by writing-plans after the parallelization-analyzer fills in the plan |
 | No `team_name`; agents return and dissolve | `team_name` per teammate; team persists until `TeamDelete` |
 
 **Rule of thumb:** If you'd want to send a teammate a follow-up message, you want `kryptonite:coordinating-agent-teams`. If they should do one thing and never talk to you again, you want this skill.

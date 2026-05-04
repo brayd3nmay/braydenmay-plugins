@@ -50,6 +50,13 @@ Agent (general-purpose):
     inline block, or pattern in the diff, run searches before flagging or
     clearing it.
 
+    ## Output Discipline
+
+    Output ONLY the sections under "Output Format" below. No
+    deliberation prose, self-corrections, or "skip me" notes — decide
+    internally, emit decisions only. Candidates that don't survive
+    scrutiny go under "Cleared / out-of-scope" with a one-line reason.
+
     ## Output Format
 
     ## Reuse Findings

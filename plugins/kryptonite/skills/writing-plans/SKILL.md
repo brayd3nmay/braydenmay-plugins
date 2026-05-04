@@ -28,7 +28,7 @@ This applies to EVERY project regardless of perceived simplicity.
 You MUST create a task for each of these items and complete them in order:
 
 1. **Set up the feature worktree** — invoke `kryptonite:using-git-worktrees` to create a worktree on a new `feature/<name>` branch. Planning, execution, refine, and finishing all happen inside this worktree. `cd` into it before continuing — every subsequent path is relative to this worktree.
-2. **Capture brainstorming handoff into plan doc** — copy the brainstorming handoff block from chat into the plan doc's `## Brainstorming Handoff` section (see plan structure below). This must happen BEFORE validator dispatch — they read from the plan doc, not chat. If brainstorming did not precede this plan, write `(no brainstorming preceded this plan)` under the section.
+2. **Write plan doc** — create the plan file at `docs/plans/YYYY-MM-DD-<feature>.md` and copy the brainstorming handoff block from chat into the plan doc's `## Brainstorming Handoff` section (see plan structure below). This must happen BEFORE validator dispatch — they read from the plan doc, not chat. If brainstorming did not precede this plan, write `(no brainstorming preceded this plan)` under the section. (Step 4 fleshes out the rest of the plan; this step just stages the handoff at the top of the doc.)
 3. **Map files and components** — decide what gets touched and how it splits
 4. **Draft the plan** and save to `docs/plans/YYYY-MM-DD-<feature>.md` (path relative to the feature worktree)
 5. **Self-review** (inline, fresh eyes — fix obvious junk before spending validator tokens)
@@ -43,7 +43,7 @@ You MUST create a task for each of these items and complete them in order:
 ```dot
 digraph writing_plans {
     "Set up feature worktree" [shape=box];
-    "Capture brainstorming handoff" [shape=box];
+    "Write plan doc" [shape=box];
     "Map files and components" [shape=box];
     "Draft plan to docs/plans/" [shape=box];
     "Self-review inline" [shape=box];
@@ -58,8 +58,8 @@ digraph writing_plans {
     "Decision point: team or inline?" [shape=box];
     "Hand off" [shape=doublecircle];
 
-    "Set up feature worktree" -> "Capture brainstorming handoff";
-    "Capture brainstorming handoff" -> "Map files and components";
+    "Set up feature worktree" -> "Write plan doc";
+    "Write plan doc" -> "Map files and components";
     "Map files and components" -> "Draft plan to docs/plans/";
     "Draft plan to docs/plans/" -> "Self-review inline";
     "Self-review inline" -> "Pick validators";
@@ -145,9 +145,16 @@ This structure informs how you split the plan into Component sections, and it's 
 **Implementation notes:** prose. Approach, libs, tricky bits, decisions already made.
    No code unless literal content is required (SQL schema, exact API payload, env var names).
 **Verification:** how we'll know it's done — tests to add, commands to run, output to check
-**Risk flags:** destructive ops, novel patterns, hidden assumptions
+**Risk flags:** Specific risks an executor needs to handle differently from the default flow. Use a leading category tag for filtering:
+   - `destructive:` — anything that deletes, overwrites, or migrates existing state (file deletions, schema changes, mass renames). Executor MUST pause-and-confirm before running.
+   - `novel:` — a pattern not used elsewhere in this codebase. Reviewer should validate the choice rather than the implementation.
+   - `assumption:` — a hidden invariant the implementation depends on (e.g. "assumes the queue is FIFO"). If the assumption breaks, the component breaks.
+
+   Do NOT write empty or vague flags. "Be careful with errors" is not a Risk flag; "destructive: rebuilds the search index from scratch (drops user-pinned items)" is. If a component has no real risks, write `None` — the section can be empty.
+
+**Tag matching semantics (for downstream consumers):** Tag detection is **case-sensitive prefix match** at the start of a Risk flag entry, separated by colon-space. `destructive: drops the user_sessions table` matches; `Destructive: ...` (capital D) does not. Untagged flags (e.g. plain "rebuilds the index from scratch") do NOT trigger the pause-and-confirm gate; they're treated as informational and surfaced only in refine and PR review. Old plans without tags continue to work but won't get the new tag-aware behaviors.
 **Compat-shim ledger:** any deprecation markers, shims, or compat-only code introduced by this component
-   (matches the `DEPRECATED|SHIM|TODO:compat` grep that `kryptonite:finishing-a-development-branch` runs in
+   (matches the `DEPRECATED|SHIM|TODO:compat` grep that finishing-a-development-branch runs in
    Step 1.5c). Name the marker, the file it lives in, and which component / future task is responsible for
    removing it. Leave empty if none.
 ```
@@ -156,12 +163,12 @@ This structure informs how you split the plan into Component sections, and it's 
 
 The plan doc at `docs/plans/YYYY-MM-DD-<feature>.md` is a working artifact for one feature's implementation, not a permanent record. It lives inside the feature worktree this skill creates in Step 1; both execution paths and the closing skill operate inside that same worktree. Ownership across the kryptonite workflow:
 
-- **Created by:** this skill (`kryptonite:writing-plans`), inside the feature worktree, and **committed at the decision point** once the user picks team or inline. Both execution paths inherit it from `feature/<name>`.
-- **Read by:** `kryptonite:executing-plans` (inline execution), `kryptonite:coordinating-agent-teams` (team execution — per-teammate worktrees branch off `feature/<name>` and inherit the committed doc), and `kryptonite:refine` (reads Non-goals + Risk flags as guardrails).
-- **Updated by:** `kryptonite:executing-plans` and `kryptonite:coordinating-agent-teams` if a contract revision is needed mid-implementation. The plan doc stays the source of truth — update it (and commit the update) before continuing.
-- **Deleted by:** `kryptonite:finishing-a-development-branch`, after integration is decided and with explicit user confirmation. For Option 1 (PR), deletion happens *before* PR creation so the plan doc doesn't ship in the PR. For Options 2/3/4, deletion happens during cleanup. No other skill deletes the plan doc; users who want to archive plans can save the file elsewhere before that step or decline the deletion when prompted.
+- **Created by:** this skill (writing-plans), inside the feature worktree, and **committed at the decision point** once the user picks team or inline. Both execution paths inherit it from `feature/<name>`.
+- **Read by:** executing-plans (inline execution), coordinating-agent-teams (team execution — per-teammate worktrees branch off `feature/<name>` and inherit the committed doc), and refine (reads Non-goals + Risk flags as guardrails).
+- **Updated by:** executing-plans and coordinating-agent-teams if a contract revision is needed mid-implementation. The plan doc stays the source of truth — update it (and commit the update) before continuing.
+- **Deleted by:** finishing-a-development-branch, after integration is decided and with explicit user confirmation. For Option 1 (PR), deletion happens *before* PR creation so the plan doc doesn't ship in the PR. For Options 2/3/4, deletion happens during cleanup. No other skill deletes the plan doc; users who want to archive plans can save the file elsewhere before that step or decline the deletion when prompted.
 
-If you want to keep plan docs as a permanent record in your repo, decline the deletion in `kryptonite:finishing-a-development-branch` — the plugin defers to user confirmation at that step.
+If you want to keep plan docs as a permanent record in your repo, decline the deletion in finishing-a-development-branch — the plugin defers to user confirmation at that step.
 
 ## No Placeholders
 
@@ -202,7 +209,7 @@ You pick which validators to run based on what the plan actually touches. None a
 | `simplicity` | Default include unless the plan is trivial. Flags premature abstractions, speculative features, things "for future flexibility." |
 | `codebase-fit` | Plan adds files or patterns. Reads the existing codebase; flags re-invention of patterns or unused-existing-code. |
 | `scope` | Plan is non-trivial. Verifies it matches the user's original ask — catches scope creep. |
-| `parallelization-analyzer` | Plan has 2+ components AND team execution is plausible. Outputs three things into `## Parallelization Map`: (1) **Groups** — parallelizable batches with sequential dependencies between them; (2) **Ownership table** — each component mapped to a teammate name (so teammates can address each other peer-to-peer); (3) **Inter-group contracts** — which teammate publishes which `contracts/<thing>.md` between groups. Plus anti-parallelization warnings. Also asserts inter-group edges are acyclic and that any prereq mount/provider/context a later group depends on is owned by an earlier group. **All three subsections are required when "agent team" execution is selected** — `kryptonite:coordinating-agent-teams` refuses to spawn without them. |
+| `parallelization-analyzer` | Plan has 2+ components AND team execution is plausible. Outputs three things into `## Parallelization Map`: (1) **Groups** — parallelizable batches with sequential dependencies between them; (2) **Ownership table** — each component mapped to a teammate name (so teammates can address each other peer-to-peer); (3) **Inter-group contracts** — which teammate publishes which `contracts/<thing>.md` between groups. Plus anti-parallelization warnings. Also asserts inter-group edges are acyclic and that any prereq mount/provider/context a later group depends on is owned by an earlier group. **All three subsections are required when "agent team" execution is selected** — coordinating-agent-teams refuses to spawn without them. |
 | `integration-contract` | Plan has 2+ components talking to each other. Catches hand-wavy boundaries — critical for team mode where teammates work in parallel against contracts. Also checks cancellation/failure cascades between components and status-vocabulary translation when domain enums differ. |
 | `verification` | Default include. Checks each component has a clear PASS/FAIL signal — tests, commands, output checks — not vague "make sure it works." |
 
@@ -265,17 +272,17 @@ If the user replies with anything other than a clear team/inline choice (e.g. "w
 **If "agent team":**
 - REQUIRED SUB-SKILL: `kryptonite:coordinating-agent-teams`
 - The parallelization-analyzer's output drives team decomposition.
-- A tmux session is strongly recommended for team mode — `kryptonite:coordinating-agent-teams` will check at preflight and prompt you if you're not in one.
+- A tmux session is strongly recommended for team mode — coordinating-agent-teams will check at preflight and prompt you if you're not in one.
 
 **If "inline":**
 - REQUIRED SUB-SKILL: `kryptonite:executing-plans`
 - Execute components sequentially with checkpoints.
 
-Either way, the closing pass is the `kryptonite:refine` skill after implementation completes.
+Either way, the closing pass is the refine skill after implementation completes.
 
 ## Brainstorming → writing-plans handoff
 
-`kryptonite:brainstorming` doesn't write a separate spec doc anymore. It hands off the conversation directly. You synthesize the plan from the brainstorming context — the design, approaches, and decisions are all in the dialogue you just had.
+The brainstorming skill doesn't write a separate spec doc anymore. It hands off the conversation directly. You synthesize the plan from the brainstorming context — the design, approaches, and decisions are all in the dialogue you just had.
 
 If you weren't part of the brainstorming (rare — only happens if the user invokes writing-plans cold), ask the user to share the design intent before drafting.
 
@@ -285,4 +292,4 @@ If you weren't part of the brainstorming (rare — only happens if the user invo
 - Validation lives in main chat, never inside an agent team
 - Implementation notes are prose; no code blocks unless content is literal
 - Re-dispatch only failed validators after revision
-- After execution + refine completes, the workflow ends with `kryptonite:finishing-a-development-branch` — it presents integration options and drives cleanup without auto-committing or auto-pushing
+- After execution + refine completes, the workflow ends with finishing-a-development-branch — it presents integration options and drives cleanup without auto-committing or auto-pushing

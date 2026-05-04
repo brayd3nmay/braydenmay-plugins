@@ -73,6 +73,13 @@ Agent (general-purpose):
       behavior change, not refine territory).
     - **Do not flag** pre-existing issues outside the diff.
 
+    ## Output Discipline
+
+    Output ONLY the sections under "Output Format" below. No
+    deliberation prose, self-corrections, or "skip me" notes — decide
+    internally, emit decisions only. Candidates that don't survive
+    scrutiny are omitted entirely.
+
     ## Output Format
 
     ## Efficiency Findings

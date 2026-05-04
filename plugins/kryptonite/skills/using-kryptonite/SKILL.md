@@ -4,16 +4,7 @@ description: Use when starting any conversation - establishes how to find and us
 ---
 
 <SUBAGENT-STOP>
-**One-shot subagent** (no `team_name`, briefing tells you to do one task and return — e.g. a validator from `kryptonite:writing-plans`, a helper from `kryptonite:dispatching-parallel-agents`):
-→ Skip this skill entirely. Do the one task, return.
-
-**Long-lived teammate** in a `kryptonite:coordinating-agent-teams` team (your briefing says "You are NOT a one-shot subagent" and you have a `team_name`):
-→ DO follow this skill, with three carve-outs. You MUST NOT use:
-  - `kryptonite:coordinating-agent-teams` — no nested teams
-  - `kryptonite:writing-plans` — don't re-plan; if the plan is wrong, `SendMessage` the lead
-  - `kryptonite:brainstorming` — design happened upstream
-
-You DO use the implementation-discipline skills: `kryptonite:test-driven-development`, `kryptonite:verification-before-completion`, `kryptonite:systematic-debugging`, `kryptonite:dispatching-parallel-agents` (for one-shot helpers).
+If you were dispatched as a one-shot subagent to execute a specific task, skip this skill — do the task and return. (Long-lived teammates spawned by the coordinating-agent-teams skill follow this skill normally; their briefing carries the carve-outs they need.)
 </SUBAGENT-STOP>
 
 <EXTREMELY-IMPORTANT>
@@ -34,17 +25,17 @@ Core workflow: **brainstorming → writing-plans → (executing-plans | coordina
 
 | Skill | Use when |
 |---|---|
-| `kryptonite:brainstorming` | Any creative work (new feature, component, behavior change) — explores intent and produces the Brainstorming Handoff that writing-plans consumes. |
-| `kryptonite:writing-plans` | Brainstorming has converged. Sets up the feature worktree, drafts the plan to `docs/plans/`, dispatches parallel validators, presents the team-or-inline decision. |
-| `kryptonite:executing-plans` | User picked "inline" at the writing-plans decision point. Walks components in dependency order with verification gates. |
-| `kryptonite:coordinating-agent-teams` | User picked "agent team" and the plan has a populated parallelization map. Spawns long-lived teammates in worktrees, reviews every done claim, runs refine via a teammate. |
-| `kryptonite:refine` | Closing pass after implementation completes. Three parallel reviewers (reuse, quality, efficiency); structural changes only, no behavior changes. |
-| `kryptonite:finishing-a-development-branch` | Implementation + refine done. Verifies clean+green, presents PR/merge/squash/hand-off, drives cleanup of worktrees, branches, and the plan doc. |
-| `kryptonite:using-git-worktrees` | Called by writing-plans (and coordinating-agent-teams for per-teammate worktrees) to set up isolated workspaces. |
-| `kryptonite:dispatching-parallel-agents` | Powers one-shot fan-outs: writing-plans validators, refine reviewers, ad-hoc parallel investigations inside teammates. |
-| `kryptonite:test-driven-development` | Implementing any feature or bug fix — every component, before any production code. |
-| `kryptonite:verification-before-completion` | About to claim work is complete, fixed, or passing — required before committing or handing off. |
-| `kryptonite:systematic-debugging` | Any bug, test failure, or unexpected behavior — root cause before fixes. |
+| `brainstorming` | Any creative work (new feature, component, behavior change) — explores intent and produces the Brainstorming Handoff that writing-plans consumes. |
+| `writing-plans` | Brainstorming has converged. Sets up the feature worktree, drafts the plan to `docs/plans/`, dispatches parallel validators, presents the team-or-inline decision. |
+| `executing-plans` | User picked "inline" at the writing-plans decision point. Walks components in dependency order with verification gates. |
+| `coordinating-agent-teams` | User picked "agent team" and the plan has a populated parallelization map. Spawns long-lived teammates in worktrees, reviews every done claim, runs refine via a teammate. |
+| `refine` | Closing pass after implementation completes. Three parallel reviewers (reuse, quality, efficiency); structural changes only, no behavior changes. |
+| `finishing-a-development-branch` | Implementation + refine done. Verifies clean+green, presents PR/merge/squash/hand-off, drives cleanup of worktrees, branches, and the plan doc. |
+| `using-git-worktrees` | Called by writing-plans (and coordinating-agent-teams for per-teammate worktrees) to set up isolated workspaces. |
+| `dispatching-parallel-agents` | Powers one-shot fan-outs: writing-plans validators, refine reviewers, ad-hoc parallel investigations inside teammates. |
+| `test-driven-development` | Implementing any feature or bug fix — every component, before any production code. |
+| `verification-before-completion` | About to claim work is complete, fixed, or passing — required before committing or handing off. |
+| `systematic-debugging` | Any bug, test failure, or unexpected behavior — root cause before fixes. |
 
 All skills are invoked via the Skill tool.
 
@@ -62,9 +53,9 @@ Use the `Skill` tool. When you invoke a skill, its content is loaded and present
 
 ## Skill Prefix Convention
 
-**Always prefix kryptonite skill references with `kryptonite:`.** This applies everywhere — directives ("invoke `kryptonite:writing-plans`"), prose cross-references ("called by `kryptonite:executing-plans`"), checklists, briefings, slash commands, and frontmatter descriptions. The prefix resolves unambiguously when other skill plugins are installed alongside kryptonite, and stays correct when only kryptonite is installed.
+**Use the `kryptonite:` prefix at action points only.** Action points are: `Skill` tool invocations, sub-skill directives ("REQUIRED SUB-SKILL: Use kryptonite:X"), teammate briefing instructions where the agent will invoke a skill, frontmatter `description` cross-references where another plugin might collide, and `Calls:` / `Called by:` / `Pairs with:` lines in Integration sections (which readers may follow).
 
-There is no carve-out for prose. A reference that looks too casual to need the prefix today is still a reference that becomes ambiguous the moment another plugin ships a same-named skill. Uniform prefixing eliminates the judgment call entirely.
+Descriptive prose ("called by the executing-plans skill", "the brainstorming skill explores intent") uses bare names. The discriminator: would a reader/agent be about to *act on* this name? If yes, prefix; if no, bare.
 
 # Using Skills
 

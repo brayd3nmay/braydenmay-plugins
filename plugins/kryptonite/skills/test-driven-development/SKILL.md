@@ -35,7 +35,7 @@ Thinking "skip TDD just this once"? Stop. That's rationalization.
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-Write code before the test? Delete it. Start over.
+If you wrote code before its test, stop. Revert that code, write the failing test first, then re-implement.
 
 (Iron Law applies when a test framework exists or one is being added. If the project has **no framework installed AND the user hasn't asked for one**, see the "No test framework installed" exception under "When to Use" — write manual verification steps instead. The exception is narrow on purpose: it is NOT a path around TDD for projects with frameworks, and it is NOT a path around having SOME explicit verification.)
 
@@ -288,7 +288,7 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 - "TDD is dogmatic, I'm being pragmatic"
 - "This is different because..."
 
-**All of these mean: Delete code. Start over with TDD.**
+**All of these are signals to revert and re-do under TDD: write the failing test, watch it fail for the right reason, then implement.**
 
 ## Example: Bug Fix
 
@@ -340,7 +340,7 @@ Before marking work complete:
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
 
-Can't check all boxes? You skipped TDD. Start over — UNLESS you're operating under the "No test framework installed" exception (see "When to Use"), in which case the equivalent checklist is:
+If you can't check all boxes, the discipline slipped — revert the implementation and re-run TDD from the failing test. UNLESS you're operating under the "No test framework installed" exception (see "When to Use"), in which case the equivalent checklist is:
 
 - [ ] Manual verification steps written down (commands + expected output, not "looks fine")
 - [ ] User explicitly confirmed the no-framework path (or framework genuinely doesn't exist for this project type, e.g. markdown-only edits)

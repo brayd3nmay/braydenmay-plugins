@@ -5,7 +5,7 @@ description: "You MUST use this before any creative work — creating features, 
 
 # Brainstorming Ideas Into Designs
 
-Help turn ideas into fully formed designs through natural collaborative dialogue. The output is **conversation context**, not a separate spec document — `kryptonite:writing-plans` reads the dialogue and synthesizes the plan from it.
+Help turn ideas into fully formed designs through natural collaborative dialogue. The output is **conversation context**, not a separate spec document — `writing-plans` reads the dialogue and synthesizes the plan from it.
 
 Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval before handing off.
 
@@ -17,7 +17,7 @@ Do NOT invoke any implementation skill, write any code, or scaffold any project 
 This applies to EVERY project regardless of perceived simplicity.
 </HARD-GATE>
 
-**Validation lives downstream.** Brainstorming approves the *shape* of the work. `kryptonite:writing-plans` validates the *plan* with parallel validators. Don't conflate the two.
+**Validation lives downstream.** Brainstorming approves the *shape* of the work. The writing-plans skill validates the *plan* with parallel validators. Don't conflate the two.
 
 **Announce at start:** "I'm using the brainstorming skill to explore the design."
 
@@ -34,7 +34,7 @@ Create a TodoWrite task per item; complete in order:
 3. **Ask clarifying questions** — one at a time; understand purpose, constraints, success criteria
 4. **Propose 2–3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Post the Brainstorming Handoff** — one final message with the structured block (verbatim user ask, goal, architecture, components, decisions reached, alternatives rejected, non-goals). See "The Brainstorming Handoff Block" section below for exact structure. This single block is both the close-out the user reads and the artifact `kryptonite:writing-plans` consumes.
+6. **Post the Brainstorming Handoff** — one final message with the structured block (verbatim user ask, goal, architecture, components, decisions reached, alternatives rejected, non-goals). See "The Brainstorming Handoff Block" section below for exact structure. This single block is both the close-out the user reads and the artifact writing-plans consumes.
 7. **Hand off to `kryptonite:writing-plans`** — invoke the skill so it reads the conversation and synthesizes the plan
 
 ## Process Flow
@@ -67,7 +67,7 @@ digraph brainstorming {
 }
 ```
 
-**The terminal state is invoking `kryptonite:writing-plans`.** That's the only skill you invoke after brainstorming. `kryptonite:writing-plans` reads the conversation context — it does not need a separate spec doc.
+**The terminal state is invoking `kryptonite:writing-plans`.** That's the only skill you invoke after brainstorming. The writing-plans skill reads the conversation context — it does not need a separate spec doc.
 
 ## The Process
 
@@ -100,7 +100,7 @@ digraph brainstorming {
 - Break the system into smaller units that each have one clear purpose, communicate through well-defined interfaces, and can be understood and tested independently
 - For each unit, you should be able to answer: what does it do, how do you use it, what does it depend on?
 - Can someone understand what a unit does without reading its internals? Can you change the internals without breaking consumers? If not, the boundaries need work.
-- Smaller, well-bounded units are also easier for `kryptonite:coordinating-agent-teams` to parallelize: fine-grained components map cleanly to teammates and groups.
+- Smaller, well-bounded units are also easier for the coordinating-agent-teams skill to parallelize: fine-grained components map cleanly to teammates and groups.
 
 **Working in existing codebases:**
 
@@ -112,11 +112,11 @@ digraph brainstorming {
 
 Once the design is approved:
 
-1. **Post the Brainstorming Handoff block** in chat (one final message). See "The Brainstorming Handoff Block" section below for the exact structure. This block is both the close-out the user reads and the artifact `kryptonite:writing-plans` consumes — there is no separate conversational recap.
-2. **Ask the user to confirm:** "Ready to hand off to `kryptonite:writing-plans` to synthesize the implementation plan?"
+1. **Post the Brainstorming Handoff block** in chat (one final message). See "The Brainstorming Handoff Block" section below for the exact structure. This block is both the close-out the user reads and the artifact writing-plans consumes — there is no separate conversational recap.
+2. **Ask the user to confirm:** "Does this look good? Can I start writing the plan?"
 3. On confirmation: invoke `kryptonite:writing-plans`. It reads this conversation, synthesizes the plan, runs parallel validators, and presents a decision point (agent team or inline execution).
 
-Do NOT write a separate spec document. Do NOT commit anything to git at this stage. The conversation IS the artifact `kryptonite:writing-plans` reads.
+Do NOT write a separate spec document. Do NOT commit anything to git at this stage. The conversation IS the artifact writing-plans reads.
 
 ## Key Principles
 
@@ -126,7 +126,7 @@ Do NOT write a separate spec document. Do NOT commit anything to git at this sta
 - **Explore alternatives** — always propose 2–3 approaches before settling
 - **Incremental validation** — present design, get approval before moving on
 - **Be flexible** — go back and clarify when something doesn't make sense
-- **Conversation is the artifact** — no separate spec doc; `kryptonite:writing-plans` reads the dialogue
+- **Conversation is the artifact** — no separate spec doc; writing-plans reads the dialogue
 
 ## Visual Companion
 
@@ -157,11 +157,11 @@ If they agree to the companion, read the detailed guide before proceeding:
 This is the single artifact that closes the brainstorming conversation. It plays two roles at once:
 
 - **Close-out for the user** — covering goal, architecture, components, and the decisions you reached together. The user reads this to confirm the brainstorm landed where they expected before handing off.
-- **Structured handoff for `kryptonite:writing-plans`** — the verbatim user ask and the decisions/alternatives/non-goals become source-of-truth values for validator slots downstream.
+- **Structured handoff for writing-plans** — the verbatim user ask and the decisions/alternatives/non-goals become source-of-truth values for validator slots downstream.
 
 There is no separate conversational recap. This block IS the recap.
 
-The conversation is the broader artifact, but `kryptonite:writing-plans` dispatches validators as **fresh subagents** that have no access to this conversation. The lead must hand specific values into validator prompts (notably `scope-prompt.md`'s `[USER_REQUEST_VERBATIM]` and `[BRAINSTORM_DECISIONS]` slots). If the conversation gets compressed later, those values are gone unless you've preserved them in this block.
+The conversation is the broader artifact, but writing-plans dispatches validators as **fresh subagents** that have no access to this conversation. The lead must hand specific values into validator prompts (notably `scope-prompt.md`'s `[USER_REQUEST_VERBATIM]` and `[BRAINSTORM_DECISIONS]` slots). If the conversation gets compressed later, those values are gone unless you've preserved them in this block.
 
 **Before invoking `kryptonite:writing-plans`, post one final message (no separate file) with this exact structure:**
 
@@ -197,10 +197,10 @@ The conversation is the broader artifact, but `kryptonite:writing-plans` dispatc
 - <thing the user mentioned but doesn't want now, if any>
 ```
 
-This block becomes the source of truth the lead in `kryptonite:writing-plans` pastes into validator slots:
+This block becomes the source of truth the lead in writing-plans pastes into validator slots:
 - The verbatim quote → `[USER_REQUEST_VERBATIM]`
 - The decisions + rejected alternatives + non-goals → `[BRAINSTORM_DECISIONS]`
 
 Post this **immediately before** invoking `kryptonite:writing-plans`. Do not skip it for "small" projects — the validator pipeline runs the same way regardless of project size, and a lead who can't find the verbatim ask will reconstruct it from memory and get it subtly wrong.
 
-**`kryptonite:writing-plans` will copy this block into the plan doc as its first action.** Once it's in the plan doc, that copy is the source of truth for validator slot substitution — the chat copy still serves human reference, but if the conversation compresses, the plan doc preserves the verbatim ask.
+**The writing-plans skill will copy this block into the plan doc as its first action.** Once it's in the plan doc, that copy is the source of truth for validator slot substitution — the chat copy still serves human reference, but if the conversation compresses, the plan doc preserves the verbatim ask.

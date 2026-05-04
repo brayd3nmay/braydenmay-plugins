@@ -7,7 +7,7 @@ description: Use when implementation and refine are complete and you need to clo
 
 ## Overview
 
-The closing pass for kryptonite work. After execution and `kryptonite:refine` land on the working branch, this skill verifies the branch is in a presentable state, lays out integration options, and walks the user through whichever option they pick — without ever committing, pushing, or merging on their behalf.
+The closing pass for kryptonite work. After execution and refine land on the working branch, this skill verifies the branch is in a presentable state, lays out integration options, and walks the user through whichever option they pick — without ever committing, pushing, or merging on their behalf.
 
 **Core principle:** Verify clean → Verify green → Present options → User picks → Execute the user-instructed steps → Clean up.
 
@@ -17,8 +17,8 @@ The closing pass for kryptonite work. After execution and `kryptonite:refine` la
 
 This skill handles both kryptonite execution paths:
 
-- **Inline topology** — single feature branch (likely in a worktree), produced by `kryptonite:executing-plans`.
-- **Team topology** — an integration branch with per-teammate sub-branches in their own worktrees, produced by `kryptonite:coordinating-agent-teams`. The integration branch is what gets shipped; the per-teammate branches are intermediate.
+- **Inline topology** — single feature branch (likely in a worktree), produced by executing-plans.
+- **Team topology** — an integration branch with per-teammate sub-branches in their own worktrees, produced by coordinating-agent-teams. The integration branch is what gets shipped; the per-teammate branches are intermediate.
 
 Detect which you're in before Step 3:
 
@@ -300,7 +300,7 @@ Use `-D` (force) because they were never merged through normal channels — thei
 
 #### Refine branch (team mode only)
 
-If `kryptonite:coordinating-agent-teams` created `feature/<feature>/refine`, it should already be merged into integration. Delete it:
+If coordinating-agent-teams created `feature/<feature>/refine`, it should already be merged into integration. Delete it:
 
 ```bash
 git branch -d feature/<feature>/refine   # -d: safe; will refuse if unmerged
@@ -327,8 +327,8 @@ rm docs/plans/<YYYY-MM-DD-feature>.md
 # Contracts directory (team mode only)
 rm -rf contracts/
 
-# Placeholder READMEs — show the file content first; if substantive, ask before removing
-# Example: contracts/README.md with only boilerplate
+# Init artifacts and placeholder READMEs — show the file content first; if substantive, ask before removing
+[ -f contracts/.gitkeep ] && rm contracts/.gitkeep
 [ -f contracts/README.md ] && rm contracts/README.md
 ```
 

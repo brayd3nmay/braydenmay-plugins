@@ -15,7 +15,7 @@ If the plan has a populated `## Parallelization Map`, that section is for team m
 
 ## What the plan looks like
 
-Plans from `kryptonite:writing-plans` are component-based. Each `## Component: <name>` section gives you:
+Plans from writing-plans are component-based. Each `## Component: <name>` section gives you:
 
 - **Goal** — one-sentence intent
 - **Public interface / contract** — inputs, outputs, side effects, error modes
@@ -31,7 +31,7 @@ There are no bite-sized steps and no checkboxes. You're an implementer with judg
 
 ### Step 1: Verify you're in the feature worktree
 
-`kryptonite:writing-plans` already created the feature worktree on `feature/<name>` as its first step. Confirm: `pwd` should show the worktree path; `git rev-parse --abbrev-ref HEAD` should show `feature/<name>`. The plan file at `docs/plans/<file>.md` should be present and committed (writing-plans committed it at the decision point) — `git status --porcelain` should be clean.
+The writing-plans skill already created the feature worktree on `feature/<name>` as its first step. Confirm: `pwd` should show the worktree path; `git rev-parse --abbrev-ref HEAD` should show `feature/<name>`. The plan file at `docs/plans/<file>.md` should be present and committed (writing-plans committed it at the decision point) — `git status --porcelain` should be clean.
 
 If you're not in the worktree (e.g. the user invoked executing-plans cold without writing-plans), stop and ask the user — don't unilaterally create one. The plan and any prior validator work live in writing-plans' worktree; recreating loses both.
 
@@ -51,7 +51,7 @@ If you're not in the worktree (e.g. the user invoked executing-plans cold withou
    ]})
    ```
 
-   `TodoWrite` is the correct tool name (consistent with `kryptonite:coordinating-agent-teams` and `kryptonite:brainstorming`). Do not invent alternative names like `TaskCreate`.
+   `TodoWrite` is the correct tool name (consistent with coordinating-agent-teams and brainstorming). Do not invent alternative names like `TaskCreate`.
 
 ### Step 3: Execute components in dependency order
 
@@ -60,11 +60,11 @@ For each component:
 1. Mark its todo as `in_progress`.
 2. **Re-read the component section** in the plan. Hold the contract and implementation notes in mind for this slice of work.
 3. **Honor risk flags.** If the section flags a destructive op (deletion, schema change, mass rewrite), pause and confirm with the user before executing it. Risk flags are warnings the planner left for you on purpose.
-4. **Implement.** Invoke `kryptonite:test-driven-development` and follow it for every component — RED, GREEN, REFACTOR. Inline execution does NOT relax TDD; the discipline is the same as in team mode. The only exceptions are the ones `kryptonite:test-driven-development` itself names (throwaway prototypes, generated code, configuration files, no-test-framework projects), and they require asking the user first.
+4. **Implement.** Invoke `kryptonite:test-driven-development` and follow it for every component — RED, GREEN, REFACTOR. Inline execution does NOT relax TDD; the discipline is the same as in team mode. The only exceptions are the ones the test-driven-development skill itself names (throwaway prototypes, generated code, configuration files, no-test-framework projects), and they require asking the user first.
 5. **Run the component's Verification block.** This is the gate — not your gut. If it specifies a test command, run it and confirm green. If it specifies an output check, check the output. Never mark a component done on the basis of "looks right."
 6. If verification fails: debug it. Use `kryptonite:systematic-debugging`. Don't move on with a red component.
 7. **Plan-vs-impl drift gate (run BEFORE marking the component done).** Re-read the component's plan section side-by-side with the diff for this component (`git diff --stat` for the file list, then targeted reads for the substantive changes). Confirm the diff matches the contract: same files touched, same public interface, no scope creep, no missing pieces. If the diff materially diverges from the plan — extra files modified, contract changed, behavior different from the Implementation notes — STOP. Surface the divergence to the user with a one-paragraph "here's what the plan said vs. what landed" summary; either revise the plan to match reality (and update `docs/plans/<file>.md`) or rework the implementation to match the plan. Do NOT silently let the plan and the diff disagree. Drift caught here is cheap; drift caught at refine or PR time is expensive.
-8. Commit the component's work as a focused commit (per user's CLAUDE.md, do NOT auto-commit unless the user has asked you to commit during this session — otherwise stage the changes and let them know the component is ready for review).
+8. Commit the component's work as a focused commit (per user's CLAUDE.md, do NOT auto-commit unless the user has asked you to commit during this session — otherwise stage the changes and ask the user "does this look good — ready for the next component?", not "can I commit?").
 9. Mark the todo as `completed`.
 
 ### Step 4: Final verification
@@ -115,7 +115,7 @@ If you have to revise a contract during implementation, **update the plan doc** 
 
 - Components, not steps — each `## Component: <name>` is one slice of work
 - Dependency order, not document order — read `Dependencies` and topologically sort
-- TDD every component — `kryptonite:test-driven-development` is required, not optional
+- TDD every component — the test-driven-development skill is required, not optional
 - Verification is the gate, not your judgment
 - Honor risk flags — they were planted on purpose
 - Stop when blocked, don't guess
