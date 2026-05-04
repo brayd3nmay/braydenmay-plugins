@@ -25,6 +25,7 @@ Write the test first. Watch it fail. Write minimal code to pass.
 - Throwaway prototypes
 - Generated code
 - Configuration files
+- **No test framework installed** — the project has no test runner (no `npm test`, no `pytest`, no `cargo test`, no `go test`, etc.) AND the user has not asked you to introduce one. Both conditions must hold; "I don't feel like setting up a test framework" is not the exception. In this case, ASK the user how verification should work for this work, and write **explicit manual verification steps** (concrete commands or actions + expected output) into the plan or component instead of fabricating fake `verify-*.ts` scripts to satisfy the discipline. Markdown-only or docs-only changes also live here — the verification is a re-read + grep, not a unit test.
 
 Thinking "skip TDD just this once"? Stop. That's rationalization.
 
@@ -35,6 +36,8 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
 Write code before the test? Delete it. Start over.
+
+(Iron Law applies when a test framework exists or one is being added. If the project has **no framework installed AND the user hasn't asked for one**, see the "No test framework installed" exception under "When to Use" — write manual verification steps instead. The exception is narrow on purpose: it is NOT a path around TDD for projects with frameworks, and it is NOT a path around having SOME explicit verification.)
 
 **No exceptions:**
 - Don't keep it as "reference"
@@ -337,7 +340,12 @@ Before marking work complete:
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
 
-Can't check all boxes? You skipped TDD. Start over.
+Can't check all boxes? You skipped TDD. Start over — UNLESS you're operating under the "No test framework installed" exception (see "When to Use"), in which case the equivalent checklist is:
+
+- [ ] Manual verification steps written down (commands + expected output, not "looks fine")
+- [ ] User explicitly confirmed the no-framework path (or framework genuinely doesn't exist for this project type, e.g. markdown-only edits)
+- [ ] Verification was actually run, not just written
+- [ ] Edge cases verified manually with the same explicit steps
 
 ## When Stuck
 

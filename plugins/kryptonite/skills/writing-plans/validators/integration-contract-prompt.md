@@ -24,6 +24,8 @@ Agent (general-purpose):
     | Inputs | Type, structure, required vs optional, defaults, validation rules |
     | Outputs | Type, structure, what's optional, what's nullable |
     | Error modes | Which exceptions/error codes the producer raises; how the consumer handles each |
+    | Cancellation & failure cascade | If upstream fails or is cancelled mid-flight, what does the downstream component do? AbortController / cancel token / cleanup hooks named where they live? Partial-state cleanup spec'd? |
+    | Status-vocabulary translation | If components use different enums for the same conceptual state (e.g. event-domain `'errored'` vs DB-domain `'error'`), where does the translation helper live and which side owns it? |
     | Side effects | Database writes, files written, events emitted, external calls |
     | Timing/ordering | When can this be called? Idempotent? Async? Concurrent-safe? |
 

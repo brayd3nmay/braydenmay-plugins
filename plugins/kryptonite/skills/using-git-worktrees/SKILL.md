@@ -82,6 +82,30 @@ project=$(basename "$(git rev-parse --show-toplevel)")
 
 ### 2. Create Worktree
 
+#### 2a. Path-segment collision check
+
+Before computing the path, refuse branch names that would collide with an existing worktree at a path-segment level. A branch named `feature/auth/storage` cannot coexist with an existing worktree at `.worktrees/feature/auth/` because git would have to treat the same directory as both a worktree and a parent of one — git refuses, and the failure mode is confusing.
+
+```bash
+# Split the proposed branch on "/" and walk parent paths under the worktree-dir.
+# If any prefix is already a worktree directory, refuse and ask the user to pick a different name.
+proposed_path="$LOCATION/$BRANCH_NAME"
+parent="$LOCATION"
+for segment in $(echo "$BRANCH_NAME" | tr '/' ' '); do
+  parent="$parent/$segment"
+  if [ "$parent" != "$proposed_path" ] && [ -d "$parent" ] && git worktree list --porcelain | grep -q "^worktree $(realpath "$parent" 2>/dev/null)$"; then
+    echo "ERROR: branch '$BRANCH_NAME' collides with existing worktree at '$parent'."
+    echo "Pick a different name (e.g. 'feature/auth-storage' instead of 'feature/auth/storage'),"
+    echo "or remove the existing worktree first: git worktree remove '$parent'"
+    exit 1
+  fi
+done
+```
+
+This refuses `feature/x/storage` when `feature/x` is already a worktree, but legitimately allows sibling names like `feature/auth-v2` and `feature/auth-v3` (they don't share a directory prefix).
+
+#### 2b. Compute path and create
+
 ```bash
 # Determine full path
 case $LOCATION in
@@ -93,51 +117,80 @@ case $LOCATION in
     ;;
 esac
 
-# Create worktree with new branch
-git worktree add "$path" -b "$BRANCH_NAME"
-cd "$path"
+# Create worktree with new branch. Always run from repo root (use `git -C` if calling
+# from elsewhere) so the path is resolved against the repo root, NOT the current cwd —
+# otherwise an invocation from inside another worktree creates nested paths like
+# `.worktrees/X/.worktrees/Y/`.
+repo_root="$(git rev-parse --show-toplevel)"
+( cd "$repo_root" && git worktree add "$path" -b "$BRANCH_NAME" )
 ```
+
+**Cwd hygiene:** do NOT `cd "$path"` and rely on shell state persisting across subsequent steps. Each later step (project setup, baseline test) must either use `git -C "$path" …` / absolute paths or wrap its own commands in a subshell `( cd "$path" && … )`. Bare `cd` between tool calls silently drifts when an intermediate command fails, and has caused near-miss commits to the wrong branch.
 
 ### 3. Run Project Setup
 
-Auto-detect and run appropriate setup:
+Auto-detect and run appropriate setup. All commands operate on `$path` via subshell or `-C`-style flags — never relying on a persisted `cd`:
 
 ```bash
 # Node.js
-if [ -f package.json ]; then npm install; fi
+[ -f "$path/package.json" ] && ( cd "$path" && npm install )
 
 # Rust
-if [ -f Cargo.toml ]; then cargo build; fi
+[ -f "$path/Cargo.toml" ] && ( cd "$path" && cargo build )
 
 # Python
-if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-if [ -f pyproject.toml ]; then poetry install; fi
+[ -f "$path/requirements.txt" ] && ( cd "$path" && pip install -r requirements.txt )
+[ -f "$path/pyproject.toml" ] && ( cd "$path" && poetry install )
 
 # Go
-if [ -f go.mod ]; then go mod download; fi
+[ -f "$path/go.mod" ] && ( cd "$path" && go mod download )
 ```
 
 ### 4. Verify Clean Baseline
 
-Run tests to ensure worktree starts clean:
+Detect whether the project actually has a runnable test suite, then branch the report accordingly. The three outcomes (passed / failed / no suite) must be distinguishable — a project with no tests must NOT be reported as "passing baseline."
 
 ```bash
-# Examples - use project-appropriate command
-npm test
-cargo test
-pytest
-go test ./...
+# Pick the project-appropriate command, but only if it's actually defined.
+# Examples:
+#   - Node.js: a "test" script in package.json
+#   - Rust:    a Cargo.toml with [[test]] targets or `tests/` dir
+#   - Python:  pytest collects > 0 tests
+#   - Go:      `go test ./...` finds test files
+test_cmd_exists=false
+test_passed=false
+# (set test_cmd_exists=true if a runnable suite is detected, then run it from the worktree)
+
+if ! $test_cmd_exists; then
+  echo "No test suite found — skipping baseline test verification"
+elif $test_passed; then
+  echo "Tests passing"
+else
+  echo "Tests failed — report failures and ask whether to proceed or investigate"
+fi
 ```
 
 **If tests fail:** Report failures, ask whether to proceed or investigate.
 
 **If tests pass:** Report ready.
 
+**If no test suite is found:** Report ready WITHOUT claiming success on tests. Do NOT emit "Build passes baseline" or any phrasing that conflates "no suite" with "passed."
+
 ### 5. Report Location
+
+Pick the line that matches the actual outcome from step 4 — never combine them:
 
 ```
 Worktree ready at <full-path>
 Tests passing (<N> tests, 0 failures)
+Ready to implement <feature-name>
+```
+
+OR (when no suite exists):
+
+```
+Worktree ready at <full-path>
+No test suite found — skipping baseline test verification
 Ready to implement <feature-name>
 ```
 

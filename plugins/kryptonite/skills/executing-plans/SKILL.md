@@ -40,7 +40,18 @@ If you're not in the worktree (e.g. the user invoked executing-plans cold withou
 1. Read the plan file end-to-end
 2. Build a dependency-ordered list of components by reading each component's `Dependencies` field. A component with no dependencies (or only external deps) can run first; everything else waits for what it consumes.
 3. Critical-review pass: check for contradictions between component contracts, missing pieces, or contracts you don't understand. **If you find issues, stop and raise them with the user before touching code.** A flawed plan implemented faithfully is still a flawed result.
-4. If clean, create a TodoWrite with one entry per component (in dependency order) and proceed.
+4. If clean, create todos with one entry per component, in dependency order. Use `TodoWrite` directly — don't paraphrase the step into prose:
+
+   ```
+   TodoWrite({ todos: [
+     { content: "<Component A name>", status: "pending", activeForm: "..." },
+     { content: "<Component B name>", status: "pending", activeForm: "..." },
+     { content: "<Component C name>", status: "pending", activeForm: "..." },
+     // …one per component
+   ]})
+   ```
+
+   `TodoWrite` is the correct tool name (consistent with `kryptonite:coordinating-agent-teams` and `kryptonite:brainstorming`). Do not invent alternative names like `TaskCreate`.
 
 ### Step 3: Execute components in dependency order
 
@@ -49,11 +60,12 @@ For each component:
 1. Mark its todo as `in_progress`.
 2. **Re-read the component section** in the plan. Hold the contract and implementation notes in mind for this slice of work.
 3. **Honor risk flags.** If the section flags a destructive op (deletion, schema change, mass rewrite), pause and confirm with the user before executing it. Risk flags are warnings the planner left for you on purpose.
-4. **Implement.** Invoke `kryptonite:test-driven-development` and follow it for every component — RED, GREEN, REFACTOR. Inline execution does NOT relax TDD; the discipline is the same as in team mode. The only exceptions are the ones `kryptonite:test-driven-development` itself names (throwaway prototypes, generated code, configuration files), and they require asking the user first.
+4. **Implement.** Invoke `kryptonite:test-driven-development` and follow it for every component — RED, GREEN, REFACTOR. Inline execution does NOT relax TDD; the discipline is the same as in team mode. The only exceptions are the ones `kryptonite:test-driven-development` itself names (throwaway prototypes, generated code, configuration files, no-test-framework projects), and they require asking the user first.
 5. **Run the component's Verification block.** This is the gate — not your gut. If it specifies a test command, run it and confirm green. If it specifies an output check, check the output. Never mark a component done on the basis of "looks right."
 6. If verification fails: debug it. Use `kryptonite:systematic-debugging`. Don't move on with a red component.
-7. Commit the component's work as a focused commit (per user's CLAUDE.md, do NOT auto-commit unless the user has asked you to commit during this session — otherwise stage the changes and let them know the component is ready for review).
-8. Mark the todo as `completed`.
+7. **Plan-vs-impl drift gate (run BEFORE marking the component done).** Re-read the component's plan section side-by-side with the diff for this component (`git diff --stat` for the file list, then targeted reads for the substantive changes). Confirm the diff matches the contract: same files touched, same public interface, no scope creep, no missing pieces. If the diff materially diverges from the plan — extra files modified, contract changed, behavior different from the Implementation notes — STOP. Surface the divergence to the user with a one-paragraph "here's what the plan said vs. what landed" summary; either revise the plan to match reality (and update `docs/plans/<file>.md`) or rework the implementation to match the plan. Do NOT silently let the plan and the diff disagree. Drift caught here is cheap; drift caught at refine or PR time is expensive.
+8. Commit the component's work as a focused commit (per user's CLAUDE.md, do NOT auto-commit unless the user has asked you to commit during this session — otherwise stage the changes and let them know the component is ready for review).
+9. Mark the todo as `completed`.
 
 ### Step 4: Final verification
 

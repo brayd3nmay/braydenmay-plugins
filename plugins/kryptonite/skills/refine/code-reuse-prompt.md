@@ -63,5 +63,19 @@ Agent (general-purpose):
       utility would change observable behavior — the refine controller will
       filter these out)
 
-    If nothing to flag: "No reuse opportunities found."
+    If nothing to flag here: "No reuse opportunities found."
+
+    ## Cleared / out-of-scope
+
+    If you noticed a pattern that LOOKED like reuse but you intentionally
+    skipped — settled team convention, intentional duplication for clarity,
+    test isolation, an existing decision in the plan's Implementation notes —
+    record it here in one line, NOT in Findings. The aggregator pass in
+    `refine/SKILL.md` only ingests Findings; cleared items don't pollute the
+    fix list, but they're visible to the user as "considered and skipped."
+
+    Format: one bullet per cleared item:
+    - **<file:line or pattern>:** <one-line reason for clearing>
+
+    If nothing was cleared: "No cleared findings."
 ```

@@ -82,6 +82,15 @@ Agent (general-purpose):
 
     Even on CONCERNS or FAIL, still produce all three subsections — the user may override.
 
+    ## Structural assertions (run before returning)
+
+    Before emitting your verdict, verify:
+
+    1. **Acyclicity** — every Group N → Group N+1 edge points strictly forward; no component in Group N depends on a component in Group N+M for M ≥ 0. If you find a cycle (or a same-group dependency that should be cross-group), return FAIL with the cycle named.
+    2. **Prereq mounts in earlier groups** — if a later-group component depends on a provider, mount, or context (e.g. a `ToastProvider`, a hook's required wrapper, a singleton init) that *must already be running* when the consumer renders or executes, that provider's component must live in an earlier group than every consumer. If a consumer sits in Group N and its required provider is in Group N or later, return FAIL with the violation named.
+
+    These two checks catch the failure mode where parallel teammates each implement their slice correctly but the wired-up branch is broken because a dependency was implicit, not modeled.
+
     ## Anti-parallelization warnings
 
     Add a final subsection if any apply:

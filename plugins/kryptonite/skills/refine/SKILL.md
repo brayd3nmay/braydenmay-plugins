@@ -62,6 +62,18 @@ The diff scope depends on which workflow called you:
 
 If there are no git changes, fall back to the most recently edited files the user mentioned. Don't refine a clean tree silently.
 
+### Chunked diff reads (avoid the persisted-output token cap)
+
+Past refine runs have hit the 25k persisted-output token cap because they dumped a single large `git diff` into reviewer prompts and then burned turns recovering. Avoid this:
+
+1. **Stat first.** Run `git diff --stat <range>` once at the orchestrator level (this skill, before dispatching reviewers). The stat output gives the file list and per-file line counts cheaply.
+2. **Skip vendored / lock files** unless the change to one is small and substantive. `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, generated bundles — these are noise to a reuse/quality reviewer.
+3. **Pre-fetch each changed file's diff** in chunks with a per-batch budget of roughly ≤ 5k tokens (~ 200 lines). For a single file whose diff exceeds the budget, read it with offset/limit and continue across multiple reads.
+4. **Pass each reviewer a batched view, not the raw `git diff`.** The reviewer prompts (`./code-reuse-prompt.md`, `./code-quality-prompt.md`, `./efficiency-prompt.md`) all accept a `[PASTE FULL DIFF …]` slot — substitute a per-file batched paste, not one mega-blob. Annotate which files belong to which batch so the reviewer can correlate findings.
+5. **Pre-fetch ONCE at the orchestrator level**, then hand the result to all three reviewers. Don't have each reviewer re-run `git diff --stat` independently.
+
+This keeps every persisted-output read comfortably under the cap and avoids the recovery-burn pattern.
+
 ## Phase 2: Read the plan's deliberate decisions
 
 If a plan doc exists at `docs/plans/YYYY-MM-DD-<feature>.md`, read these sections before dispatching reviewers:
@@ -86,16 +98,25 @@ Prompt templates:
 - `./code-quality-prompt.md`
 - `./efficiency-prompt.md`
 
-## Phase 4: Aggregate and filter findings
+## Phase 4: Aggregate and filter findings (the aggregator pass)
 
-Collect the three reports, then filter:
+The three reviewers each return a list of findings independently — they don't see each other's output. Run an explicit aggregator pass to consolidate before fixing:
+
+**Inputs to the aggregator:**
+- Reuse reviewer's `## Reuse Findings` + `## Cleared / out-of-scope` (the cleared bucket is for findings the reviewer recognized and intentionally skipped — see `./code-reuse-prompt.md`; do NOT promote cleared items into the fix list).
+- Quality reviewer's `## Quality Findings`.
+- Efficiency reviewer's `## Efficiency Findings`.
+
+**Aggregator steps (in order):**
 
 1. **Drop deliberate tradeoffs.** If a finding contradicts the plan's Non-goals, Risk flags, or settled Implementation notes, drop it.
 2. **Drop behavior changes.** If fixing a finding would alter observable behavior — return values, side effects, error modes, performance characteristics that are part of the contract — drop it from the fix list and surface it to the user instead.
-3. **De-duplicate.** Three reviewers sometimes flag the same issue from different angles. Pick the clearest framing and merge.
-4. **Note false positives** — don't argue with the reviewer; just skip and note in the report.
+3. **Cluster duplicates by `<file>:<symbol>` (or `<file>` for file-level findings).** Three reviewers sometimes flag the same underlying issue from different angles ("this util duplicates X" / "this could be smaller" / "this allocates redundantly" might all point at the same function). Group them.
+4. **Merge each cluster into one entry.** Pick the clearest framing as the entry's headline, and tag the entry with the reviewers that flagged it: `flagged by [reuse, quality]`. Visibility into multi-reviewer agreement signals priority and helps the executor understand what mattered.
+5. **Order the merged list** by fix-cost (cheap first) within priority bands derived from reviewer count (entries flagged by 2+ reviewers come before entries flagged by 1).
+6. **Note false positives** — don't argue with the reviewer; skip cleanly and record in the Phase 7 report.
 
-What survives all four filters is the fix list.
+What survives the aggregator is **one ordered fix list**, deduped, with reviewer-attribution tags. That's what Phase 5 fixes.
 
 ## Phase 5: Fix the surviving findings
 

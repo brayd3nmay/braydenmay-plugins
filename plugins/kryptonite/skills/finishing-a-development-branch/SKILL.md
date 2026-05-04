@@ -51,7 +51,73 @@ Worktree <path> has uncommitted changes:
 Resolve before I can continue (commit, stash, or discard — your call).
 ```
 
-Do not proceed to Step 2 until everything is clean.
+Do not proceed to Step 1.5 until everything is clean.
+
+### Step 1.5: Pre-PR sanity scans (run on the shipping branch)
+
+After the working tree is clean but before tests, run these scans on the shipping branch. Any one of them firing is a STOP-and-prompt — not a silent fix.
+
+#### 1.5a Stale build artifacts
+
+Scan for known build-output directories and named bundles. They should be gitignored or rebuilt fresh; stale committed copies are how broken bundles ship to `main`.
+
+```bash
+# directories that almost always belong to .gitignore, not the repo
+for d in dist build out .next .nuxt .svelte-kit; do
+  [ -d "$d" ] && ! git check-ignore -q "$d" && echo "FLAG: '$d' exists and is NOT gitignored"
+done
+
+# named bundles to check (extend per project — content.js is the super-zoom case)
+for f in content.js bundle.js dist.js; do
+  [ -f "$f" ] && git ls-files --error-unmatch "$f" >/dev/null 2>&1 && echo "FLAG: '$f' is tracked — confirm it's intentional"
+done
+```
+
+If any FLAG line appears, STOP and prompt the user, naming each suspicious file:
+
+> The shipping branch contains files that look like build artifacts: `<list>`. Browser-extension projects sometimes intentionally commit a built `content.js`; most projects don't. Are these intended to ship, or should they be regenerated / gitignored before PR?
+
+Don't hard-refuse — name the files, let the user decide.
+
+#### 1.5b Parallel test directories
+
+If `test/` and `tests/` both exist, the project's test runner glob almost certainly picks one and silently drops the other (super-zoom shipped tests this way that `npm test` never ran). Refuse:
+
+```bash
+if [ -d test ] && [ -d tests ]; then
+  echo "REFUSE: both 'test/' and 'tests/' exist — pick one before PR"
+fi
+```
+
+If both are present, STOP. Surface the directories and ask the user to consolidate before we continue.
+
+#### 1.5c Compat-shim ledger gate
+
+Plans carry a "Compat-shim ledger" entry under per-component Risk flags listing any deprecation/shim markers introduced (see `kryptonite:writing-plans`). Cross-check the diff for those markers; surface anything that wasn't declared.
+
+```bash
+git grep -n -E "(DEPRECATED|SHIM|TODO:compat)" -- ':!docs/plans' || echo "no compat markers found"
+```
+
+If hits exist, show them to the user and ask: "These compat markers exist on the shipping branch. Are they listed in the plan's compat-shim ledger and intentional, or should they be cleaned up before PR?" Do not auto-clean.
+
+#### 1.5d Doc-vs-feature drift gate
+
+If the diff added user-visible behavior — keyboard shortcuts, persistent prefs, menu items, public API surface, env vars, settings — and `README.md` / `CHANGELOG.md` / equivalent docs were not modified in this branch, surface a prompt:
+
+```bash
+# heuristic: did docs change in this branch?
+docs_changed=$(git diff --name-only <base>...HEAD -- README.md CHANGELOG.md docs/ 2>/dev/null)
+
+# heuristic: did the diff add user-visible-looking patterns?
+visible_signals=$(git diff <base>...HEAD | grep -nE "(addEventListener\(['\"]key|registerShortcut|menu\.add|env\.[A-Z_]+|process\.env\.[A-Z_]+|export const [A-Z]|new preference|new setting)")
+```
+
+If `visible_signals` is non-empty AND `docs_changed` is empty (excluding the plan doc itself), prompt:
+
+> The diff appears to add user-visible behavior (shortcuts, menu items, env vars, public API) but README/CHANGELOG weren't updated on this branch. Did these intentionally not need doc updates? If they DID need doc updates, please add them before PR — the v1 super-zoom run shipped 5 keyboard shortcuts + 2 menu items with no README change, and that's the failure mode this gate exists to prevent.
+
+This gate is heuristic by design — it asks, never refuses. False positives on it are cheap; the user just answers "yes, intentional."
 
 ### Step 2: Verify tests green on the shipping branch
 
@@ -240,18 +306,33 @@ If `kryptonite:coordinating-agent-teams` created `feature/<feature>/refine`, it 
 git branch -d feature/<feature>/refine   # -d: safe; will refuse if unmerged
 ```
 
-#### Plan doc
+#### Working artifacts (mandatory cleanup for Options 1/2/3)
 
-The plan doc is a working artifact of one feature's implementation, not a permanent record (see "Plan-doc lifecycle" in `kryptonite:writing-plans`).
+Three categories of working artifacts accumulate during a kryptonite run that must NOT ship to `main`. Cleanup is **mandatory** for Options 1, 2, and 3 — only Option 4 (hand-off) keeps them.
 
-- **Option 1 (PR)** — already handled inside Option 1's flow (deleted before PR creation, unless the user explicitly opted to keep it in the PR record). Skip this subsection.
-- **Options 2, 3, 4** — delete the plan doc here, once integration is decided:
+1. **Plan doc** — `docs/plans/YYYY-MM-DD-<feature>.md`
+2. **`contracts/` directory** — only present in team mode; intermediate inter-group contracts owned by per-teammate teammates
+3. **Placeholder READMEs** — e.g. a 5-line `contracts/README.md` with only boilerplate; if it has no substantive content beyond "what this directory is for," it's a placeholder
 
-  ```bash
-  rm docs/plans/<YYYY-MM-DD-feature>.md
-  ```
+For each:
 
-  Show the user the path you're about to delete and wait for their go-ahead before running the command. The user commits the deletion themselves (per the global no-auto-commit rule). Users who want to keep plan docs archived can decline the deletion here — respect their answer either way.
+- **Option 1 (PR)** — plan doc deletion is already handled inside Option 1's flow (deleted before PR creation, unless the user explicitly opted to keep it in the PR record). For `contracts/` and placeholder READMEs, do the same now: surface them, delete locally, let the user commit the deletion before push.
+- **Options 2, 3** — delete here, once integration is decided. Required, not optional. The pre-PR scans in Step 1.5 already surfaced their existence.
+- **Option 4 (hand-off)** — keep all three. The artifacts are part of the hand-off context.
+
+```bash
+# Plan doc
+rm docs/plans/<YYYY-MM-DD-feature>.md
+
+# Contracts directory (team mode only)
+rm -rf contracts/
+
+# Placeholder READMEs — show the file content first; if substantive, ask before removing
+# Example: contracts/README.md with only boilerplate
+[ -f contracts/README.md ] && rm contracts/README.md
+```
+
+Show the user the paths you're about to delete and wait for their go-ahead before running each command. The user commits the deletions themselves (per the global no-auto-commit rule). Users who want to keep working artifacts archived can decline at this step — respect their answer either way, but make the default-required-for-1/2/3 framing explicit so users don't accidentally ship them.
 
 #### Shipping branch
 

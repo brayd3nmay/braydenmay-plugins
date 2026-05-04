@@ -146,6 +146,10 @@ This structure informs how you split the plan into Component sections, and it's 
    No code unless literal content is required (SQL schema, exact API payload, env var names).
 **Verification:** how we'll know it's done — tests to add, commands to run, output to check
 **Risk flags:** destructive ops, novel patterns, hidden assumptions
+**Compat-shim ledger:** any deprecation markers, shims, or compat-only code introduced by this component
+   (matches the `DEPRECATED|SHIM|TODO:compat` grep that `kryptonite:finishing-a-development-branch` runs in
+   Step 1.5c). Name the marker, the file it lives in, and which component / future task is responsible for
+   removing it. Leave empty if none.
 ```
 
 ## Plan-doc lifecycle
@@ -198,8 +202,8 @@ You pick which validators to run based on what the plan actually touches. None a
 | `simplicity` | Default include unless the plan is trivial. Flags premature abstractions, speculative features, things "for future flexibility." |
 | `codebase-fit` | Plan adds files or patterns. Reads the existing codebase; flags re-invention of patterns or unused-existing-code. |
 | `scope` | Plan is non-trivial. Verifies it matches the user's original ask — catches scope creep. |
-| `parallelization-analyzer` | Plan has 2+ components AND team execution is plausible. Outputs three things into `## Parallelization Map`: (1) **Groups** — parallelizable batches with sequential dependencies between them; (2) **Ownership table** — each component mapped to a teammate name (so teammates can address each other peer-to-peer); (3) **Inter-group contracts** — which teammate publishes which `contracts/<thing>.md` between groups. Plus anti-parallelization warnings. **All three subsections are required when "agent team" execution is selected** — `kryptonite:coordinating-agent-teams` refuses to spawn without them. |
-| `integration-contract` | Plan has 2+ components talking to each other. Catches hand-wavy boundaries — critical for team mode where teammates work in parallel against contracts. |
+| `parallelization-analyzer` | Plan has 2+ components AND team execution is plausible. Outputs three things into `## Parallelization Map`: (1) **Groups** — parallelizable batches with sequential dependencies between them; (2) **Ownership table** — each component mapped to a teammate name (so teammates can address each other peer-to-peer); (3) **Inter-group contracts** — which teammate publishes which `contracts/<thing>.md` between groups. Plus anti-parallelization warnings. Also asserts inter-group edges are acyclic and that any prereq mount/provider/context a later group depends on is owned by an earlier group. **All three subsections are required when "agent team" execution is selected** — `kryptonite:coordinating-agent-teams` refuses to spawn without them. |
+| `integration-contract` | Plan has 2+ components talking to each other. Catches hand-wavy boundaries — critical for team mode where teammates work in parallel against contracts. Also checks cancellation/failure cascades between components and status-vocabulary translation when domain enums differ. |
 | `verification` | Default include. Checks each component has a clear PASS/FAIL signal — tests, commands, output checks — not vague "make sure it works." |
 
 ### Return shape (every validator returns this)

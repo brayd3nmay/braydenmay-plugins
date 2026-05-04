@@ -37,7 +37,11 @@ fi
 
 Set `KRYPTONITE_SKIP_TMUX_CHECK=1` to skip this check permanently — for users who never use tmux.
 
-**If not in tmux**, surface this to the user and wait for confirmation:
+**If `$TMUX` is set (output is `in tmux`):** the user is already inside a tmux session. Skip this entire preflight section silently and proceed to the next checklist item. Do NOT surface anything to the user, do NOT ask about starting a session, do NOT mention tmux at all. The whole point of this gate is to avoid asking when the answer is already yes.
+
+**If output is `tmux check skipped`:** the user opted out via env var. Same as above — proceed silently.
+
+**If — and only if — output is `NOT in tmux`**, surface this to the user and wait for confirmation:
 
 > Heads up — you're about to spawn a long-lived agent team that may run for several minutes or longer. I noticed you're not in a tmux session.
 >
@@ -60,7 +64,26 @@ Wait for an explicit "yes / continue" response before proceeding. Do NOT infer c
 
 ## Checklist
 
-Create a TodoWrite task per item and complete in order:
+Create todos for these items with `TodoWrite` directly — don't paraphrase, use the tool:
+
+```
+TodoWrite({ todos: [
+  { content: "Verify the plan is team-ready", status: "pending", activeForm: "Verifying plan is team-ready" },
+  { content: "Verify the integration worktree", status: "pending", activeForm: "Verifying integration worktree" },
+  { content: "Initialize contracts/ directory", status: "pending", activeForm: "Initializing contracts/ directory" },
+  { content: "Commit contracts/ to integration branch", status: "pending", activeForm: "Committing contracts/" },
+  { content: "Create per-teammate worktrees", status: "pending", activeForm: "Creating per-teammate worktrees" },
+  { content: "TeamCreate + spawn Group 1", status: "pending", activeForm: "Spawning Group 1" },
+  { content: "Receive done claims, review, ack/rework", status: "pending", activeForm: "Reviewing done claims" },
+  { content: "Verify Group N → N+1 contracts at boundary", status: "pending", activeForm: "Verifying inter-group contracts" },
+  { content: "Spawn Group N+1; repeat until all groups done", status: "pending", activeForm: "Spawning next group" },
+  { content: "Spawn refine-teammate", status: "pending", activeForm: "Spawning refine-teammate" },
+  { content: "Confirm refine report; present integration diff", status: "pending", activeForm: "Reviewing refine + presenting diff" },
+  { content: "TeamDelete + hand off to finishing-a-development-branch", status: "pending", activeForm: "Tearing down + handoff" },
+]})
+```
+
+`TodoWrite` is the existing convention across this plugin — don't invent alternative names like `TaskCreate`. Complete the items in order:
 
 1. **Verify the plan is team-ready** — parallelization map, groups, ownership table, inter-group contracts all populated
 2. **Verify the integration worktree** — you should already be in the feature worktree `kryptonite:writing-plans` created (its Step 1). That worktree on `feature/<name>` is now the integration worktree; you do NOT create a new one. The plan doc is already committed there (writing-plans committed it at the decision point).
@@ -177,6 +200,18 @@ Each teammate is **long-lived**, not a one-shot subagent. Use `Agent` with:
 
 Spawn ALL teammates in a group **in a single message** (multiple `Agent` tool uses in parallel).
 
+### Briefing preflight (before each spawn)
+
+Before sending the briefing for any teammate, substitute these placeholders to concrete values and verify nothing literal remains:
+
+- `<owner-name>` → the teammate's name from the ownership table
+- `<absolute-path>` → the actual absolute path to that teammate's worktree, computed from the worktree-dir + branch (NOT a relative path; NOT the integration worktree's path; NOT a placeholder)
+- `<feature>` → the feature name
+- `<branch>` → the teammate's branch (e.g. `feature/<feature>/<owner-name>`)
+- `<Component name>` lines under "Your tasks" → the components owned by this teammate per the ownership table
+
+After substituting, scan the briefing body for any remaining `<…>` placeholder text — if any survives, fix it before sending. Briefings shipped with literal placeholders cause the teammate to either ask "what's my path?" (round-trip wasted) or, worse, write to the wrong directory.
+
 ### Briefing template
 
 ```markdown
@@ -205,6 +240,8 @@ Components you don't own belong to other teammates — do not implement them.
 | Technical question for another teammate ("what field name?", "ETA on contract X?", "rename Y?") | `SendMessage` directly to that teammate by name (see ownership table) |
 | Publishing an interface contract for downstream teammates | Write to `contracts/<thing>.md` and notify per **Contract publishing protocol** below |
 
+**Plan-defect escalation:** if you believe the plan's design is wrong — a contract conflicts, a component is missing, a decision in the plan won't work in this codebase — `SendMessage` the lead with a one-paragraph "plan defect: <what>; <why it doesn't work>; <what I'd change>". Do NOT implement a workaround unilaterally and document it in an FYI message after the fact. The plan is the source of truth; if it needs to change, the lead changes it (and updates `docs/plans/<feature>.md`) before you keep going.
+
 ## Contract publishing protocol
 If your task includes publishing a contract:
 1. Write `contracts/<thing>.md` in YOUR worktree
@@ -230,7 +267,7 @@ If your task includes publishing a contract:
 When you finish a task:
 1. Run verification per the plan's "Verification" section
 2. Commit your work
-3. `SendMessage` lead: `Task <name> done. Verification: <output>. Branch: <branch>.`
+3. `SendMessage` lead: `Task <name> done. Verification: <output>. Branch: <branch>. Diff: <output of git diff --stat origin/feature/<feature>...HEAD>` — the `Diff:` line MUST include the `git diff --stat` output so the lead can see at a glance what files actually landed (impl + tests + contracts). If the plan's component verification calls for tests but only implementation files appear in the stat, fix the gap BEFORE sending the done claim — the lead will reject a claim where tests were specified by the plan but didn't land.
 4. **Wait for ack** before starting the next task
 
 ## Stop conditions
@@ -280,7 +317,15 @@ If a required contract is missing: do NOT spawn Group N+1. `SendMessage` the res
 
 When all groups are done:
 
-1. Create a fresh worktree off integration: `<worktree-dir>/<feature>-refine/` on branch `feature/<feature>/refine`
+1. Create a fresh worktree off integration: `<worktree-dir>/<feature>-refine/` on branch `feature/<feature>/refine`. **Run `git worktree add` from the repo root, not from inside the integration worktree** — otherwise the path is resolved relative to cwd and you create a nested `.worktrees/X/.worktrees/Y/` structure (this has bitten the previous super-zoom run, then was inherited by `refine2` because that one was spawned with cwd inside the nested worktree). Always:
+
+   ```bash
+   repo_root="$(git -C <integration-worktree> rev-parse --show-toplevel)"
+   ( cd "$repo_root" && git worktree add "<worktree-dir>/<feature>-refine" -b "feature/<feature>/refine" feature/<feature> )
+   ```
+
+   Before creating, sanity-check that `<worktree-dir>/<feature>-refine` is NOT a path inside another active worktree (`git worktree list` shouldn't show any active worktree as a prefix of the proposed path). If it is, refuse and pick a sibling location.
+
 2. Spawn `refine-teammate` (`Agent` with `team_name: "refine"`, `run_in_background: true`) with this briefing. The refine-teammate joins the existing team established at step 6 — do NOT call `TeamCreate` again:
 
    > Run the `kryptonite:refine` skill on this worktree. The skill dispatches three parallel reviewers (code reuse, code quality, efficiency) and applies the surviving findings. **Do NOT change behavior** — refine is structural only. Commit your changes and `SendMessage` lead a summary of what you changed and what you deliberately left alone.
