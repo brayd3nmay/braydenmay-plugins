@@ -38,3 +38,4 @@ Install only the plugins you want; each is independent.
 | Plugin | Description |
 | --- | --- |
 | [readme](plugins/readme/skills/writing-readme/SKILL.md) | Use when writing or generating a README from scratch for a software project. |
+| [kryptonite](plugins/kryptonite/skills/using-kryptonite/SKILL.md) | Skills for Claude Code agent teams: brainstorming, planning with 8 parallel validators, TDD, debugging, and long-lived agent-team coordination via `coordinating-agent-teams`. |

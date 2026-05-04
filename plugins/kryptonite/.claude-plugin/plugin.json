@@ -1,0 +1,19 @@
+{
+  "name": "kryptonite",
+  "description": "Skills for Claude Code agent teams: TDD, debugging, planning, and team coordination workflows. Claude Code only — depends on TeamCreate, SendMessage, Agent.team_name, TaskOutput, and TaskStop, which are not available on other harnesses.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brayden May",
+    "email": "brayd3nmay@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/braydenmay/braydenmay-plugins",
+  "repository": "https://github.com/braydenmay/braydenmay-plugins",
+  "keywords": [
+    "skills",
+    "agent-teams",
+    "tdd",
+    "debugging",
+    "workflows"
+  ]
+}
