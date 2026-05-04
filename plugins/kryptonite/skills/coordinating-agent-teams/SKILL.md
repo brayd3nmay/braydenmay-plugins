@@ -298,6 +298,7 @@ This rule applies to **teammates only** — it appears in your briefing because 
 
 ## Done claim protocol
 When you finish a task:
+0. Before composing your done claim, run `git status` and `git diff --stat origin/feature/<feature>...HEAD`. If the plan's verification for this task calls for tests but only implementation files appear, stage and commit the missing tests first — the lead rejects done claims where specified tests didn't land.
 1. Run verification per the plan's "Verification" section
 2. Commit your work
 3. `SendMessage` lead: `Task <name> done. Verification: <output>. Branch: <branch>. Diff: <output of git diff --stat origin/feature/<feature>...HEAD>` — the `Diff:` line MUST include the `git diff --stat` output so the lead can see at a glance what files actually landed (impl + tests + contracts). If the plan's component verification calls for tests but only implementation files appear in the stat, fix the gap BEFORE sending the done claim — the lead will reject a claim where tests were specified by the plan but didn't land.
@@ -396,7 +397,7 @@ After refine lands on integration:
    - Per-teammate contribution summary
 2. **Stop.** Per the user's CLAUDE.md, do NOT auto-commit, merge, or push. The user reviews and instructs.
 3. Once the user signals satisfaction with the integration branch:
-   - **`TeamDelete`** to dissolve the team — do this BEFORE handing off to the closing skill, so background teammates aren't running while you're walking through integration choices. **`TeamDelete` is the dismissal** — call it directly; do NOT send goodbye `SendMessage`s first (each one is a billed turn for the teammates).
+   - **`TeamDelete`** to dissolve the team — do this BEFORE handing off to the closing skill, so background teammates aren't running while you're walking through integration choices. **`TeamDelete` is the dismissal** — call it directly; do NOT send goodbye `SendMessage`s first (each one is a billed turn for the teammates). (Replaces the older `shutdown_request`/`shutdown_response` handshake — one tool call, zero billed turns.)
    - **Hand off to `kryptonite:finishing-a-development-branch`.** That skill detects the team topology (integration branch + per-teammate sub-branches + multiple worktrees), verifies every worktree is clean and the integration branch is green, presents integration options (PR / merge / squash / hand off), and drives cleanup of all worktrees, the per-teammate branches, the refine branch, and the plan doc — without auto-committing, auto-pushing, or auto-merging.
 
 Don't drive integration or cleanup decisions from this skill — finishing-a-development-branch is the single closing skill that handles both inline and team topologies. Your job ends at `TeamDelete` + handoff.
