@@ -1,0 +1,13 @@
+# Local Claude Code state — never commit
+.claude/
+
+# Worktrees created by kryptonite (and ad-hoc work)
+.worktrees/
+worktrees/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
