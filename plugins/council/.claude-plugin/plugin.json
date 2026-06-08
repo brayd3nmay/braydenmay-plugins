@@ -1,0 +1,9 @@
+{
+  "name": "council",
+  "description": "Convene a council of AI coding agents — each adds its own candid perspective on a project or spec/plan to COUNCIL.md.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brayden May",
+    "email": "brayd3nmay@gmail.com"
+  }
+}

@@ -19,6 +19,11 @@
       "name": "refine-jakes-resume",
       "source": "./plugins/refine-jakes-resume",
       "description": "Use when working on a CS-internship resume based on the Jake's Resume LaTeX template."
+    },
+    {
+      "name": "council",
+      "source": "./plugins/council",
+      "description": "Convene a council of AI coding agents — each adds its own candid perspective on a project or spec/plan to COUNCIL.md."
     }
   ]
 }
