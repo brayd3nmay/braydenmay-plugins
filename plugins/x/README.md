@@ -9,4 +9,4 @@ X (Twitter) for Claude Code: a remote X MCP server (search, users, bookmarks, tr
 
 ## Note
 
-The Worker is backed by my personal X developer app — API usage is billed to it (pay-per-use). If you're not me, deploy your own instance (`x-mcp-oauth` repo, ~150 lines) and point `.mcp.json` at it.
+The Worker is backed by my personal X developer app — API usage is billed to it (pay-per-use). If you're not me, deploy your own instance ([brayd3nmay/mcp](https://github.com/brayd3nmay/mcp) → `x/`) and point `.mcp.json` at it.
