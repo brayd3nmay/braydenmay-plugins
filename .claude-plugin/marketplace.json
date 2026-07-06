@@ -21,6 +21,11 @@
       "description": "Use when working on a CS-internship resume based on the Jake's Resume LaTeX template."
     },
     {
+      "name": "x",
+      "source": "./plugins/x",
+      "description": "X (Twitter) API access via the hosted X MCP server — search posts, look up users, bookmarks, trends, and news — plus X's official API skill."
+    },
+    {
       "name": "council",
       "source": "./plugins/council",
       "description": "Convene a council of AI coding agents — each adds its own candid perspective on a project or spec/plan to COUNCIL.md."

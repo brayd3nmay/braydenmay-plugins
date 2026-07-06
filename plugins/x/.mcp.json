@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "X": {
+      "type": "http",
+      "url": "https://xmcp.braydenmay.com/mcp"
+    }
+  }
+}
