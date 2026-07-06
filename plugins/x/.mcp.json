@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "X": {
+    "xmcp": {
       "type": "http",
       "url": "https://xmcp.braydenmay.com/mcp"
     }

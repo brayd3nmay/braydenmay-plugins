@@ -1,5 +1,5 @@
 ---
-name: x
+name: using-x
 description: Use when searching X (Twitter) posts, looking up users or their timelines, managing bookmarks, fetching trends or news, or answering any question that needs live X data. Also use when debugging X MCP auth (401, token refresh) or choosing between MCP tools and raw X API calls.
 ---
 
